@@ -35,9 +35,6 @@ Bu proje, bireylerin depresyon durumunu çeşitli demografik ve psikolojik özel
 ## 🗺️ Veri Akış Diyagramı
 Proje adımları, görsel bir diyagram ile sunulmuştur.
 
-## 📌 Geliştirme Önerileri
-- Sınıf 1 için recall değerini artırmak adına `class_weight`, `SMOTE` veya farklı model mimarileri denenebilir.
-- Streamlit ile web arayüzü geliştirilebilir.
 
 ## 👩‍💻 Hazırlayan
 Yağmur Pehlivan
