@@ -38,3 +38,71 @@ Proje adımları, görsel bir diyagram ile sunulmuştur.
 
 ## 👩‍💻 Hazırlayan
 Yağmur Pehlivan
+
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+
+# Veri yükleme
+train = pd.read_csv('/Users/yagmurphlvn/Downloads/train.csv')
+
+# Gereksiz sütunları çıkar
+X = train.drop(columns=['Depression', 'Name'])
+y = train['Depression']
+
+# Sayısal sütunlar
+numeric_cols = ['Academic Pressure', 'Work Pressure', 'CGPA', 'Study Satisfaction',
+                'Job Satisfaction', 'Financial Stress', 'Work/Study Hours', 'Age']
+
+# Kategorik sütunlar
+categorical_cols = ['Gender', 'City', 'Working Professional or Student', 'Profession',
+                    'Sleep Duration', 'Dietary Habits', 'Degree',
+                    'Have you ever had suicidal thoughts ?', 'Family History of Mental Illness']
+
+# 1. 'UNKNOWN' gibi metinleri sayısal sütunlardan temizle
+for col in numeric_cols:
+    X[col] = pd.to_numeric(X[col], errors='coerce')  # 'UNKNOWN' → NaN
+    X[col].fillna(X[col].mean(), inplace=True)
+
+# 2. Kategorik sütunlardaki 'UNKNOWN' değerleri mod ile doldur
+for col in categorical_cols:
+    X[col] = X[col].replace('UNKNOWN', np.nan)
+    X[col].fillna(X[col].mode()[0], inplace=True)
+
+# 3. Ön işleme pipeline'ı
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), categorical_cols)
+    ],
+    remainder='passthrough'
+)
+
+pipeline = Pipeline(steps=[
+    ('prep', preprocessor),
+    ('scale', StandardScaler())
+])
+
+# 4. Veriyi ayır ve dönüştür
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train_scaled = pipeline.fit_transform(X_train)
+X_val_scaled = pipeline.transform(X_val)
+
+# 5. Basit model
+model = Sequential([
+    Dense(128, activation='relu', input_dim=X_train_scaled.shape[1]),
+    Dense(1, activation='sigmoid')
+])
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# 6. Modeli eğit
+model.fit(X_train_scaled, y_train, epochs=10, validation_data=(X_val_scaled, y_val))
+
+# 7. Değerlendirme
+loss, acc = model.evaluate(X_val_scaled, y_val)
+print(f"Doğruluk: {acc * 100:.2f}%")
